@@ -25,9 +25,6 @@ if not os.path.exists(spark_default_conf_custom):
     cp_spark_conf_cmd = ['cp', spark_default_conf_temp, spark_default_conf_custom]
     subprocess.call(cp_spark_conf_cmd)
 
-# 因为使用的是spark-without-hadoop 的二进制文件,所以依赖包需要自己拷贝
-# if not os.path.exists('{}/')
-
 
 # 检查hdfs是否在运行,创建spark执行日志路径,历史日志路径,jar路径
 hadoop_namenode_pid = os.system("ps -ef | grep namenode | grep -v grep | awk '{print $2}'")
