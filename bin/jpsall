@@ -1,0 +1,7 @@
+#!/bin/bash
+
+for i in node02 node03 node04
+do
+    echo --------- $i ----------
+    ssh $i "jps"
+done

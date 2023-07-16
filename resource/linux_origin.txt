@@ -1,0 +1,137 @@
+yum update创建原始虚拟机 node00 作为还原点,其他虚拟机从该虚拟机克隆
+
+用户名: root
+密码: hadoop
+
+yum update -y
+yum install -y vim git zsh wget tree
+
+export https_proxy="http://172.16.167.1:7890"
+export https_proxy="http://10.211.55.1:7890"
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+修改域名映射(根据自己实际IP配置)
+/etc/hosts
+172.16.167.160 node00
+172.16.167.161 node01
+172.16.167.162 node02
+172.16.167.163 node03
+172.16.167.164 node04
+172.16.167.165 node05
+
+修改静态ip
+/etc/sysconfig/network-scripts/ifcfg-ens32
+BOOTPROTO="static"
+
+防火墙设置
+systemctl stop firewalld
+systemctl disable firewalld
+systemctl status firewalld
+
+selinux设置
+/etc/selinux/config
+SELINUX=disabled
+
+开机选项(直接启动linux)
+/etc/grub2.cfg 63,67行
+set timeout=0
+
+代理设置
+/etc/profile.d/proxy.sh
+# 启用代理函数
+setproxy() {
+    export http_proxy="http://172.16.167.1:7890"
+    export https_proxy="http://172.16.167.1:7890"
+    echo "代理已启用"
+}
+
+# 禁用代理函数
+unsetproxy() {
+    unset http_proxy
+    unset https_proxy
+    echo "代理已禁用"
+}
+
+java安装
+/etc/profile.d/java.sh
+export JAVA_HOME=/usr/java/latest
+export PATH=$PATH:$JAVA_HOME/bin
+
+安装python虚拟环境管理工具virtualenv(可选)
+wget https://bootstrap.pypa.io/pip/2.7/get-pip.py
+python get-pip.py
+pip install virtualenv
+
+
+切换到benbenit用户，安装oh-my-zsh
+su - benbenit
+setproxy
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+修改超级用户权限
+/etc/sudoers, 110行后面追加下面一行
+benbenit        ALL=(ALL)       NOPASSWD: ALL
+
+修改打开文件数限制
+/etc/security/limits.conf
+* soft nofile 65536
+* hard nofile 65536
+* soft nproc 131072
+* hard nproc 131072
+
+/etc/security/limits.d/20-nproc.conf
+* soft nofile 65536
+* hard nofile 65536
+* soft nproc 131072
+* hard nproc 131072
+
+
+
+
+===============================================================
+完整克隆node00,命名node02,以普通用户登陆:
+
+修改hostname
+/etc/hostname
+node02
+
+修改静态IP地址，重启
+/etc/sysconfig/network-scripts/ifcfg-ens32
+16行：172.16.167.162
+
+克隆 node03, node04, 修改同上
+
+===============================================================
+
+三台机器免密登陆
+node02:
+ssh-keygen -t rsa
+ssh-copy-id node02 && ssh-copy-id node03 && ssh-copy-id node04
+node03:
+ssh-keygen -t rsa
+ssh-copy-id node02 && ssh-copy-id node03 && ssh-copy-id node04
+node04:
+ssh-keygen -t rsa
+ssh-copy-id node02 && ssh-copy-id node03 && ssh-copy-id node04
+
+
+==========================================================================
+
+mkdir bin apps projects
+目录结构：
+
+~/bin           shell脚本
+
+~/apps          安装各种框架
+
+~/projects
+    /java/mock
+        /db                 模拟业务数据生成
+        /log                模拟日志数据生成
+        /data               日志数据生成目录
+    /java/collection
+        file_to_kafka.conf  flume日志采集配置
+
+    /python
+        /bigdata    使用virtual创建的虚拟环境名称
+        /src        各种框架的安装配置脚本
